@@ -1,5 +1,5 @@
 
-name: Run Tests
+name: Codecov Startup
 
 on:
   workflow_call:
@@ -7,7 +7,6 @@ on:
 jobs:
   codecovstartup:
     name: Codecov Startup
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
