@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-self-hosted:
-    name: Build Self Hosted API
+    name: Build Self Hosted App
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,24 +37,24 @@ jobs:
         id: cache-requirements
         uses: actions/cache@v3
         env:
-          cache-name: cache-api-requirements
+          cache-name: cache-requirements
         with:
           path: |
             requirements.tar
-          key: ${{ runner.os }}-api-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docker/Dockerfile.requirements') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docker/Dockerfile.requirements') }}
           restore-keys: |
-            ${{ runner.os }}-api-${{ env.cache-name }}-
+            ${{ runner.os }}-${{ env.cache-name }}-
 
       - name: Cache Self hosted
         id: cache-self-hosted
         uses: actions/cache@v3
         env:
-          cache-name: cache-api-self-hosted
+          cache-name: cache-self-hosted
         with:
           path: |
             self-hosted-runtime.tar
             self-hosted.tar
-          key: ${{ runner.os }}-api-${{ env.cache-name }}-${{ github.run_id }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load requirements from cache
         if: ${{ steps.cache-requirements.outputs.cache-hit == 'true' }}
@@ -90,12 +90,12 @@ jobs:
         id: cache-self-hosted
         uses: actions/cache@v3
         env:
-          cache-name: cache-api-self-hosted
+          cache-name: cache-self-hosted
         with:
           path: |
             self-hosted-runtime.tar
             self-hosted.tar
-          key: ${{ runner.os }}-api-${{ env.cache-name }}-${{ github.run_id }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
           docker load --input self-hosted-runtime.tar

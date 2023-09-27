@@ -1,0 +1,42 @@
+
+name: Run Tests
+
+on:
+  workflow_call:
+
+jobs:
+  codecovstartup:
+    name: Codecov Startup
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Install CLI
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          make test_env.install_cli
+      - name: Run Startup
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
+        run: |
+          codecovcli create-commit --fail-on-error
+          codecovcli create-report --fail-on-error
+      - name: Run Startup Staging
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          codecovcli -u ${{ secrets.CODECOV_STAGING_URL }} create-commit -t ${{ secrets.CODECOV_ORG_TOKEN_STAGING }} --fail-on-error
+          codecovcli -u ${{ secrets.CODECOV_STAGING_URL }} create-report -t ${{ secrets.CODECOV_ORG_TOKEN_STAGING }} --fail-on-error
+      - name: Run Startup QA
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          codecovcli -u ${{ secrets.CODECOV_QA_URL }} create-commit -t ${{ secrets.CODECOV_QA_TOKEN }} --fail-on-error
+          codecovcli -u ${{ secrets.CODECOV_QA_URL }} create-report -t ${{ secrets.CODECOV_QA_TOKEN }} --fail-on-error
+      - name: Run Startup Public QA
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          codecovcli -u ${{ secrets.CODECOV_PUBLIC_QA_URL }} create-commit -t ${{ secrets.CODECOV_PUBLIC_QA_TOKEN }} --fail-on-error
+          codecovcli -u ${{ secrets.CODECOV_PUBLIC_QA_URL }} create-report -t ${{ secrets.CODECOV_PUBLIC_QA_TOKEN }} --fail-on-error

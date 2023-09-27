@@ -1,0 +1,49 @@
+
+name: Run ATS
+
+on:
+  workflow_call:
+
+jobs:
+  ats:
+    name: ATS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Cache App
+        id: cache-app
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-app
+        with:
+          path: |
+            app.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
+      - name: Load built image
+        run: |
+          docker load --input app.tar
+          make tag.latest
+
+      - name: Install docker compose
+        run: |
+          sudo curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+      - name: Bring test env up
+        run: |
+          make test_env.up
+      - name: Prepare for tests
+        run: |
+          make test_env.prepare
+          make test_env.check_db
+      - name: Run Static Analysis
+        run: |
+          make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
+      - name: Run Label Analysis
+        run: |
+          make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
+      - name: Upload ATS Coverage
+        run: |
+          make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }}

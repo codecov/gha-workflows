@@ -1,0 +1,69 @@
+
+name: Build App
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: "auth"
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1.1.1"
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{ secrets.CODECOV_GCP_WIDP }}
+          service_account: ${{ secrets.CODECOV_GCP_WIDSA }}
+
+      - name: Docker configuration
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |-
+          echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://us-docker.pkg.dev
+
+      - name: Cache Requirements
+        id: cache-requirements
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-requirements
+        with:
+          path: |
+            requirements.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docker/Dockerfile.requirements') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.cache-name }}-
+
+      - name: Cache App
+        id: cache-app
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-app
+        with:
+          path: |
+            app.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
+
+      - name: Load requirements from cache
+        if: ${{ steps.cache-requirements.outputs.cache-hit == 'true' }}
+        run: |
+          make load.requirements
+
+      - name: Build/pull requirements
+        if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' }}
+        run: |
+          make build.requirements
+          make save.requirements
+
+      - name: Push Requirements
+        if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          make push.requirements
+      - name: Build app
+        run: |
+          make build.app
+          make save.app
