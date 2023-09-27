@@ -7,6 +7,12 @@ on:
       environment:
         required: true
         type: string
+      repo:
+        type: string
+        required: true
+
+env:
+  AR_REPO: ${{ inputs.repo }}
 
 jobs:
   push-environment:

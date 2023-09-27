@@ -3,6 +3,12 @@ name: Run Tests
 
 on:
   workflow_call:
+    inputs:
+      repo:
+        type: string
+        required: true
+env:
+  AR_REPO: ${{ inputs.repo }}
 
 jobs:
   test:
