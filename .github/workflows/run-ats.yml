@@ -7,6 +7,14 @@ on:
       repo:
         type: string
         required: true
+      container:
+        type: string
+        required: true
+      codecov_cli_upload_args:
+        required: false
+        type: string
+        default: ''
+        description: 'List of args to pass to cli on upload. This is kind of a hack pending a more robust solution'
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -44,12 +52,11 @@ jobs:
         run: |
           make test_env.prepare
           make test_env.check_db
-      - name: Run Static Analysis
-        run: |
-          make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-      - name: Run Label Analysis
-        run: |
-          make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-      - name: Upload ATS Coverage
-        run: |
-          make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }}
+      - id: test-upload
+        uses: codecov/codecov-ats-docker@main
+        name: Run tests and upload to Codecov
+        with:
+          container: ${{ inputs.container }}
+          codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
+          static_token: ${{ secrets.STATIC_TOKEN }}
+          codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
