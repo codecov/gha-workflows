@@ -72,3 +72,13 @@ jobs:
           static_token: ${{ secrets.STATIC_TOKEN }}
           codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
           install_cli: false
+      - run: |
+          echo "Skip List"
+          echo "=============================="
+          echo ${{ steps.test-upload.outputs.test_skip_list }}
+          echo "Runner Options"
+          echo "=============================="
+          echo ${{ steps.test-upload.outputs.runner_options }}
+          echo "Test List"
+          echo "=============================="
+          echo ${{ steps.test-upload.outputs.test_list }}
