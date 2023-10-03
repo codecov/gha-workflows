@@ -71,3 +71,4 @@ jobs:
           codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
           static_token: ${{ secrets.STATIC_TOKEN }}
           codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
+          install_cli: false
