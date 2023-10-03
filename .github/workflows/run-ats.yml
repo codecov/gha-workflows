@@ -11,6 +11,21 @@ on:
         type: string
         required: false
         default: 'app'
+      install_cli:
+        required: false
+        default: false
+        type: boolean
+        description: 'Whether to install the Codecov CLI. Set to false if you have previously installed the CLI.'
+      run_tests:
+        required: false
+        default: true
+        type: boolean
+        description: 'Whether to run the tests with the given command in the container. If set to true, this will run the test command and upload to Codecov'
+      test_command:
+        required: false
+        default: 'python -m pytest --cov=./'
+        type: string
+        description: 'Command to run in container to execute tests. Required when run_tests is true. This should be `pytest` with the desired args at this point.'
       codecov_cli_upload_args:
         required: false
         type: string
@@ -71,14 +86,6 @@ jobs:
           codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
           static_token: ${{ secrets.STATIC_TOKEN }}
           codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
-          install_cli: false
-      - run: |
-          echo "Skip List"
-          echo "=============================="
-          echo ${{ steps.test-upload.outputs.test_skip_list }}
-          echo "Runner Options"
-          echo "=============================="
-          echo ${{ steps.test-upload.outputs.runner_options }}
-          echo "Test List"
-          echo "=============================="
-          echo ${{ steps.test-upload.outputs.test_list }}
+          install_cli: ${{ inputs.install_cli }}
+          run_tests: ${{ inputs.run_tests }}
+          test_command: ${{ inputs.test_command }}
