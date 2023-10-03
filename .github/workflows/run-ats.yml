@@ -15,6 +15,11 @@ on:
         type: string
         default: ''
         description: 'List of args to pass to cli on upload. This is kind of a hack pending a more robust solution'
+      codecov_cli_yml_path:
+        required: false
+        type: string
+        default: '--codecov-yml-path=codecov_cli.yml'
+        description: 'Path to codecov cli yml. Currently expected to include flag as well --codecov-yml-path=codecov_cli.yml for ex.'
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -57,6 +62,7 @@ jobs:
         name: Run tests and upload to Codecov
         with:
           container: ${{ inputs.container }}
+          codecov_cli_yml_path: ${{ inputs.codecov_cli_yml_path }}
           codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
           static_token: ${{ secrets.STATIC_TOKEN }}
           codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
