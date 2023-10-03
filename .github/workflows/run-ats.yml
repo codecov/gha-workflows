@@ -61,7 +61,7 @@ jobs:
       - name: Get app container id
         id: get-container-id
         run: |
-          echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q)" >> >> $GITHUB_OUTPUT
+          echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q)" >> $GITHUB_OUTPUT
       - id: test-upload
         uses: codecov/codecov-ats-docker@main
         name: Run tests and upload to Codecov
