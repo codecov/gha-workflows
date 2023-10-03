@@ -109,7 +109,7 @@ jobs:
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
-      - name: Push production
+      - name: Push Self Hosted Rolling
         run: |
           make tag.self-hosted-rolling
           make push.self-hosted-rolling
