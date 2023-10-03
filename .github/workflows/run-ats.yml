@@ -7,9 +7,10 @@ on:
       repo:
         type: string
         required: true
-      container:
+      app_container_name:
         type: string
-        required: true
+        required: false
+        default: 'app'
       codecov_cli_upload_args:
         required: false
         type: string
@@ -57,11 +58,15 @@ jobs:
         run: |
           make test_env.prepare
           make test_env.check_db
+      - name: Get app container id
+        id: get-container-id
+        run: |
+          echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q)" >> >> $GITHUB_OUTPUT
       - id: test-upload
         uses: codecov/codecov-ats-docker@main
         name: Run tests and upload to Codecov
         with:
-          container: ${{ inputs.container }}
+          container: ${{ steps.get-container-id.outputs.app_container_id }}
           codecov_cli_yml_path: ${{ inputs.codecov_cli_yml_path }}
           codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
           static_token: ${{ secrets.STATIC_TOKEN }}
