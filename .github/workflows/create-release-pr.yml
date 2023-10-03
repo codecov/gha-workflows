@@ -1,5 +1,5 @@
 
-name: Create PR for Self Hosted Release
+name: Create PR for Release
 
 on:
   workflow_call:
