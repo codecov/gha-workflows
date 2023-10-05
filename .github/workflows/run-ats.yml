@@ -7,6 +7,35 @@ on:
       repo:
         type: string
         required: true
+      app_container_name:
+        type: string
+        required: false
+        default: 'app'
+      install_cli:
+        required: false
+        default: false
+        type: boolean
+        description: 'Whether to install the Codecov CLI. Set to false if you have previously installed the CLI.'
+      run_tests:
+        required: false
+        default: true
+        type: boolean
+        description: 'Whether to run the tests with the given command in the container. If set to true, this will run the test command and upload to Codecov'
+      test_command:
+        required: false
+        default: 'python -m pytest --cov=./'
+        type: string
+        description: 'Command to run in container to execute tests. Required when run_tests is true. This should be `pytest` with the desired args at this point.'
+      codecov_cli_upload_args:
+        required: false
+        type: string
+        default: ''
+        description: 'List of args to pass to cli on upload. This is kind of a hack pending a more robust solution'
+      codecov_cli_yml_path:
+        required: false
+        type: string
+        default: '--codecov-yml-path=codecov_cli.yml'
+        description: 'Path to codecov cli yml. Currently expected to include flag as well --codecov-yml-path=codecov_cli.yml for ex.'
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -44,12 +73,19 @@ jobs:
         run: |
           make test_env.prepare
           make test_env.check_db
-      - name: Run Static Analysis
+      - name: Get app container id
+        id: get-container-id
         run: |
-          make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-      - name: Run Label Analysis
-        run: |
-          make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-      - name: Upload ATS Coverage
-        run: |
-          make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }}
+          echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q | cut -c1-12 )" >> $GITHUB_OUTPUT
+      - id: test-upload
+        uses: codecov/codecov-ats-docker@main
+        name: Run tests and upload to Codecov
+        with:
+          container: ${{ steps.get-container-id.outputs.app_container_id }}
+          codecov_cli_yml_path: ${{ inputs.codecov_cli_yml_path }}
+          codecov_cli_upload_args: ${{ inputs.codecov_cli_upload_args }}
+          static_token: ${{ secrets.STATIC_TOKEN }}
+          codecov_token: ${{ secrets.CODECOV_ORG_TOKEN }}
+          install_cli: ${{ inputs.install_cli }}
+          run_tests: ${{ inputs.run_tests }}
+          test_command: ${{ inputs.test_command }}
