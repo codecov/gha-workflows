@@ -4,6 +4,10 @@ name: Run Tests
 on:
   workflow_call:
     inputs:
+      run_integration:
+        required: false
+        type: boolean
+        default: true
       repo:
         type: string
         required: true
@@ -45,6 +49,10 @@ jobs:
       - name: Run unit tests
         run: |
           make test_env.run_unit
+      - name: Run integration tests
+        if: inputs.run_integration == true
+        run: |
+          make test_env.run_integration
       ## Don't upload on forks for now.
       - name: upload using codecovcli
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
