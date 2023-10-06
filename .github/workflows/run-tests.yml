@@ -6,20 +6,18 @@ on:
     inputs:
       run_integration:
         required: false
-        type: string
+        type: boolean
         default: true
       repo:
         type: string
         required: true
 env:
   AR_REPO: ${{ inputs.repo }}
-  RUN_INTEGRATION: ${{ inputs.run_integration }}
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    run_integration: ${{ inputs.run_integration }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
