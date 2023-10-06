@@ -45,6 +45,9 @@ jobs:
       - name: Run unit tests
         run: |
           make test_env.run_unit
+      - name: Run integration tests
+        run: |
+          make test_env.run_integration
       ## Don't upload on forks for now.
       - name: upload using codecovcli
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
