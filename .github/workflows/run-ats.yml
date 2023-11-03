@@ -11,6 +11,10 @@ on:
         type: string
         required: false
         default: 'app'
+      use_action:
+        type: boolean
+        required: false
+        default: false
       install_cli:
         required: false
         default: false
@@ -74,11 +78,18 @@ jobs:
           make test_env.prepare
           make test_env.check_db
       - name: Get app container id
+        if: inputs.use_action
         id: get-container-id
         run: |
           echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q | cut -c1-12 )" >> $GITHUB_OUTPUT
       - id: test-upload
+        if: inputs.use_action == false
+        run: |
+          make test_env.label_analysis
+          make test_env.ats
+      - id: test-upload-action
         uses: codecov/codecov-ats-docker@main
+        if: inputs.use_action
         name: Run tests and upload to Codecov
         with:
           container: ${{ steps.get-container-id.outputs.app_container_id }}
