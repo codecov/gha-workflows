@@ -83,6 +83,7 @@ jobs:
         run: |
           echo "app_container_id=$(docker-compose ps ${{ inputs.app_container_name }} -q | cut -c1-12 )" >> $GITHUB_OUTPUT
       - id: test-upload
+        name: Run tests and upload to Codecov
         if: inputs.use_action == false
         run: |
           make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
@@ -91,7 +92,7 @@ jobs:
       - id: test-upload-action
         uses: codecov/codecov-ats-docker@main
         if: inputs.use_action
-        name: Run tests and upload to Codecov
+        name: Run tests and upload to Codecov via action
         with:
           container: ${{ steps.get-container-id.outputs.app_container_id }}
           codecov_cli_yml_path: ${{ inputs.codecov_cli_yml_path }}
