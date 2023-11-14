@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - id: "auth"
-        if: github.repository_owner == 'codecov' && inputs.cache_requirements
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' && inputs.cache_requirements }}
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.1.1"
         with:
@@ -37,7 +37,7 @@ jobs:
           service_account: ${{ secrets.CODECOV_GCP_WIDSA }}
 
       - name: Docker configuration
-        if: github.repository_owner == 'codecov' && inputs.cache_requirements
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' && inputs.cache_requirements }}
         run: |-
           echo ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin https://us-docker.pkg.dev
 
@@ -83,7 +83,7 @@ jobs:
   self-hosted:
     name: Push Self Hosted Image
     needs: [ build-self-hosted ]
-    if: inputs.push_rolling == true && github.repository_owner == 'codecov'
+    if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     environment: self-hosted
     steps:
@@ -116,7 +116,7 @@ jobs:
   self-hosted-release:
     name: Push Self Hosted Release Image
     needs: [ build-self-hosted ]
-    if: inputs.push_release == true && github.repository_owner == 'codecov'
+    if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     environment: self-hosted
     steps:
