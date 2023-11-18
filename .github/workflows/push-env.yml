@@ -10,6 +10,10 @@ on:
       repo:
         type: string
         required: true
+      create_sentry_release:
+        type: boolean
+        required: false
+        default: true
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -65,6 +69,7 @@ jobs:
           make tag.latest
           make push.latest
       - name: Create Sentry release
+        if: inputs.create_sentry_release
         uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.CODECOV_SENTRY_RELEASE_TOKEN }}
