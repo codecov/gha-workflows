@@ -31,7 +31,7 @@ jobs:
     name: Push ${{ inputs.environment }} Image
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    if: github.repository_owner == 'codecov'
+    if: github.repository_owner == 'codecov' && !inputs.push_rolling && !inputs.push_release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,7 +89,6 @@ jobs:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,7 +119,6 @@ jobs:
     name: Push Release Image
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
