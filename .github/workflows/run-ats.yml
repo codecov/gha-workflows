@@ -86,9 +86,9 @@ jobs:
         name: Run tests and upload to Codecov
         if: inputs.use_action == false
         run: |
-          make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-          make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }}
-          make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }}
+          make test_env.static_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_ATS_URL }}
+          make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_ATS_URL }}
+          make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_ATS_URL }}
       - id: test-upload-action
         uses: codecov/codecov-ats-docker@main
         if: inputs.use_action
@@ -102,3 +102,4 @@ jobs:
           install_cli: ${{ inputs.install_cli }}
           run_tests: ${{ inputs.run_tests }}
           test_command: ${{ inputs.test_command }}
+          codecov_url: ${{ secrets.CODECOV_ATS_URL }}

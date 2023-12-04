@@ -57,7 +57,7 @@ jobs:
       - name: upload using codecovcli
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
-          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }}
+          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_URL }}
       - name: upload using codecovcli staging
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
