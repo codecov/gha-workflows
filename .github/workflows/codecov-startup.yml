@@ -22,8 +22,8 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
         run: |
-          codecovcli create-commit --fail-on-error
-          codecovcli create-report --fail-on-error
+          codecovcli -u ${{ secrets.CODECOV_URL }} create-commit --fail-on-error
+          codecovcli -u ${{ secrets.CODECOV_URL }} create-report --fail-on-error
       - name: Run Startup Staging
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
