@@ -75,13 +75,13 @@ jobs:
         run: |
           make build.requirements      
 
-      - name: Load built image
-        if: ${{ steps.cache-self-hosted.outputs.cache-hit == 'true' }}
-        run: |
-          make load.self-hosted 
+      #- name: Load built image
+       # if: ${{ steps.cache-self-hosted.outputs.cache-hit == 'true' }}
+       # run: |
+       #   make load.self-hosted
 
       - name: Build self hosted
-        if: ${{ steps.cache-self-hosted.outputs.cache-hit != 'true' }}
+        #if: ${{ steps.cache-self-hosted.outputs.cache-hit != 'true' }}
         run: |
           make build.self-hosted
           make save.self-hosted
