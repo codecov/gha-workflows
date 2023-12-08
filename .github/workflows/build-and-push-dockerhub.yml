@@ -1,0 +1,66 @@
+
+name: Build and push to Dockerhub
+
+on:
+  workflow_call:
+    inputs:
+      repo:
+        type: string
+        required: true
+      cache:
+        type: boolean
+        default: true
+      image_name:
+        type: string
+        required: true
+      docker_path:
+        type: string
+        required: true
+
+env:
+  DOCKERHUB_REPO: ${{ inputs.repo }}
+  IMAGE_NAME: ${{ inputs.image_name }}
+  DOCKER_PATH: ${{ inputs.docker_path }}
+
+jobs:
+  build-and-push:
+    name: Build and push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Image
+        id: cache-image
+        if: inputs.cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-${{ inputs.image_name }}
+        with:
+          path: |
+            ${{ inputs.image_name }}.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
+
+      - name: Load built image
+        if: ${{ inputs.cache && steps.cache-image.outputs.cache-hit == 'true' }}
+        run: |
+          make load.${{ inputs.image_name }}
+
+      - name: Build image
+        if: ${{ !inputs.cache || steps.cache-image.outputs.cache-hit != 'true' }}
+        run: |
+          make build.${{ inputs.image_name }}
+          make save.${{ inputs.image_name }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1.14.1
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        with:
+          username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
+          password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
+
+      - name: Push self hosted release
+        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        run: |
+          make tag.${{ inputs.image_name }}
+          make push.${{ inputs.image_name }}
