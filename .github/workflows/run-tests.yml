@@ -55,18 +55,18 @@ jobs:
           make test_env.run_integration
       ## Don't upload on forks for now.
       - name: upload using codecovcli
-        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        if: ${{ !cancelled() && github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
           make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_URL }}
       - name: upload using codecovcli staging
-        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
           make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN_STAGING }} CODECOV_URL=${{ secrets.CODECOV_STAGING_URL }}
       - name: upload using codecovcli qa
-        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
           make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_QA_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_QA_URL }}
       - name: upload using codecovcli public qa
-        if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
           make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_PUBLIC_QA_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_PUBLIC_QA_URL }}
