@@ -75,18 +75,16 @@ jobs:
         run: |
           make tag.latest
           make push.latest
-      - uses: prodvana/init-pvnctl-action@v0.1.1
-        if: inputs.environment == 'staging'
+      - uses: prodvana/init-pvnctl-action@v0.1.2
         with:
           org: ${{ secrets.PRODVANA_ORG }}
           api_token: ${{ secrets.PRODVANA_API_TOKEN }}
-      - uses: prodvana/push-to-prodvana-action@v0.2.0
-        if: inputs.environment == 'staging'
+      - uses: prodvana/push-to-prodvana-action@v0.2.2
         with:
-          app: ${{ secrets.PRODVANA_APP }}
+          app: codecov-${{ inputs.environment }}
           service: ${{ secrets.PRODVANA_SERVICE }}
           parameters: imageTag=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
-          wait_channels: staging
+          wait_channels: ${{ fromJSON(vars.PRODVANA_WAIT_CHANNELS)[inputs.environment] }}
       - name: Create Sentry release
         if: inputs.create_sentry_release
         uses: getsentry/action-release@v1
