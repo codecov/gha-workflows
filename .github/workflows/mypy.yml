@@ -1,5 +1,5 @@
 
-name: Run Lint
+name: Patch typing check
 
 on:
   workflow_call:
