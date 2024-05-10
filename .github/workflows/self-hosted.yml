@@ -5,11 +5,11 @@ on:
       push_rolling:
         type: boolean
         default: false
-        description: 'Whether to push the rolling image'
+        description: "Whether to push the rolling image"
       push_release:
         type: boolean
         default: false
-        description: 'Whether to push the release image'
+        description: "Whether to push the release image"
       repo:
         type: string
         required: true
@@ -30,7 +30,7 @@ jobs:
       - id: "auth"
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' && inputs.cache_requirements }}
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.1.1"
+        uses: "google-github-actions/auth@v2.1.2"
         with:
           token_format: "access_token"
           workload_identity_provider: ${{ secrets.CODECOV_GCP_WIDP }}
@@ -44,7 +44,7 @@ jobs:
       - name: Cache Requirements
         id: cache-requirements
         if: inputs.cache_requirements
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-requirements
         with:
@@ -56,7 +56,7 @@ jobs:
 
       - name: Cache Self hosted
         id: cache-self-hosted
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-self-hosted
         with:
@@ -73,7 +73,7 @@ jobs:
       - name: Build/pull requirements
         if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' && inputs.cache_requirements }}
         run: |
-          make build.requirements      
+          make build.requirements
 
       - name: Load built image
         if: ${{ steps.cache-self-hosted.outputs.cache-hit == 'true' }}
@@ -88,7 +88,7 @@ jobs:
 
   self-hosted:
     name: Push Self Hosted Image
-    needs: [ build-self-hosted ]
+    needs: [build-self-hosted]
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     environment: self-hosted
@@ -99,7 +99,7 @@ jobs:
           fetch-depth: 0
       - name: Cache Self hosted
         id: cache-self-hosted
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-self-hosted
         with:
@@ -111,7 +111,7 @@ jobs:
         run: |
           make load.self-hosted
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1.14.1
+        uses: docker/login-action@v3.1.0
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
@@ -121,7 +121,7 @@ jobs:
           make push.self-hosted-rolling
   self-hosted-release:
     name: Push Self Hosted Release Image
-    needs: [ build-self-hosted ]
+    needs: [build-self-hosted]
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
     environment: self-hosted
@@ -132,7 +132,7 @@ jobs:
           fetch-depth: 0
       - name: Cache Self hosted
         id: cache-self-hosted
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-self-hosted
         with:
@@ -144,7 +144,7 @@ jobs:
         run: |
           make load.self-hosted
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1.14.1
+        uses: docker/login-action@v3.1.0
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
