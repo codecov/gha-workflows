@@ -1,4 +1,3 @@
-
 name: Build App
 
 on:
@@ -26,7 +25,7 @@ jobs:
       - id: "auth"
         if: ${{ !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.1.1"
+        uses: "google-github-actions/auth@v2.1.2"
         with:
           token_format: "access_token"
           workload_identity_provider: ${{ secrets.CODECOV_GCP_WIDP }}
@@ -40,7 +39,7 @@ jobs:
       - name: Cache Requirements
         id: cache-requirements
         if: inputs.cache_requirements
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-requirements
         with:
@@ -52,7 +51,7 @@ jobs:
 
       - name: Cache App
         id: cache-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-app
         with:

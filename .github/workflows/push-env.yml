@@ -1,4 +1,3 @@
-
 name: Push Image for Environment
 
 on:
@@ -17,11 +16,11 @@ on:
       push_rolling:
         type: boolean
         default: false
-        description: 'Whether to push the rolling image'
+        description: "Whether to push the rolling image"
       push_release:
         type: boolean
         default: false
-        description: 'Whether to push the release image'
+        description: "Whether to push the release image"
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -44,7 +43,7 @@ jobs:
         run: echo short_sha="${SHA:0:7}" >> $GITHUB_OUTPUT
       - name: Cache App
         id: cache-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-app
         with:
@@ -56,7 +55,7 @@ jobs:
           docker load --input app.tar
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.1.1"
+        uses: "google-github-actions/auth@v2.1.2"
         with:
           token_format: "access_token"
           workload_identity_provider: ${{ secrets.CODECOV_GCP_WIDP }}
@@ -106,7 +105,7 @@ jobs:
           fetch-depth: 0
       - name: Cache App
         id: cache-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-app
         with:
@@ -117,7 +116,7 @@ jobs:
         run: |
           docker load --input app.tar
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1.14.1
+        uses: docker/login-action@v3.1.0
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
@@ -136,7 +135,7 @@ jobs:
           fetch-depth: 0
       - name: Cache App
         id: cache-app
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-app
         with:
@@ -147,7 +146,7 @@ jobs:
         run: |
           docker load --input app.tar
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1.14.1
+        uses: docker/login-action@v3.1.0
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}

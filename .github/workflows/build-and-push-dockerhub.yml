@@ -1,4 +1,3 @@
-
 name: Build and push to Dockerhub
 
 on:
@@ -7,7 +6,7 @@ on:
       repo:
         type: string
         required: false
-        default: 'codecov'
+        default: "codecov"
       cache:
         type: boolean
         default: true
@@ -20,7 +19,7 @@ on:
       push:
         type: boolean
         default: true
-        description: 'Whether to push the image'
+        description: "Whether to push the image"
 
 env:
   DOCKERHUB_REPO: ${{ inputs.repo }}
@@ -38,7 +37,7 @@ jobs:
       - name: Cache Image
         id: cache-image
         if: inputs.cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-${{ inputs.image_name }}
         with:
@@ -58,7 +57,7 @@ jobs:
           make save.${{ inputs.image_name }}
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1.14.1
+        uses: docker/login-action@v3.1.0
         if: ${{ inputs.push && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         with:
           username: ${{ secrets.CODECOV_DEVOPS_DOCKER_USERNAME }}
