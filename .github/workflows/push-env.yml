@@ -84,6 +84,15 @@ jobs:
           service: ${{ secrets.PRODVANA_SERVICE }}
           parameters: imageTag=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
           wait_channels: ${{ fromJSON(vars.PRODVANA_WAIT_CHANNELS)[inputs.environment] }}
+
+      - uses: prodvana/push-to-prodvana-action@v0.2.2
+        if: inputs.environment == 'production'
+        with:
+          app: dedicated-cloud-clients
+          service: ${{ secrets.PRODVANA_SERVICE }}
+          parameters: imageTag=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
+          wait_channels: ${{ fromJSON(vars.PRODVANA_WAIT_CHANNELS)[inputs.environment] }}
+
       - name: Create Sentry release
         if: inputs.create_sentry_release
         uses: getsentry/action-release@v1
