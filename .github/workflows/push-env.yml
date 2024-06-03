@@ -91,7 +91,7 @@ jobs:
           app: dedicated-cloud-clients
           service: ${{ secrets.PRODVANA_SERVICE }}
           parameters: imageTag=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
-          wait_channels: ${{ fromJSON(vars.PRODVANA_WAIT_CHANNELS)[inputs.environment] }}
+       #   wait_channels: ${{ fromJSON(vars.PRODVANA_WAIT_CHANNELS)[inputs.environment] }}
 
       - name: Create Sentry release
         if: inputs.create_sentry_release
