@@ -79,6 +79,7 @@ jobs:
           org: ${{ secrets.PRODVANA_ORG }}
           api_token: ${{ secrets.PRODVANA_API_TOKEN }}
       - uses: prodvana/push-to-prodvana-action@v0.2.2
+        if: inputs.environment == 'staging' && (!inputs.repo == 'codecov/self-hosted-worker' || !inputs.repo == 'codecov/worker')
         with:
           app: codecov-${{ inputs.environment }}
           service: ${{ secrets.PRODVANA_SERVICE }}
