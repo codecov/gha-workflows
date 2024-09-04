@@ -1,0 +1,83 @@
+name: Post dependency compare link
+
+on:
+  workflow_call:
+    inputs:
+      dep:
+        type: string
+        required: true
+jobs:
+  post-comment:
+    name: Post comment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Generate a GitHub link to a page that displays all commits/changes between
+      # the old dependency version and the new one, or an empty string if the dependency
+      # wasn't changed.
+      - name: Get compare URL
+        id: get-compare-url
+        run: |
+          compare_url=$(git diff -r ${{ github.event.pull_request.base.sha }} \
+            | grep ${{ inputs.dep }}\/archive \
+            | cut -d '/' -f 7 \
+            | cut -d '.' -f 1 \
+            | awk 'NR%2{printf "https://github.com/codecov/${{ inputs.dep }}/compare/%s..",$0;next;}1')
+          echo "Compare URL: $compare_url"
+          echo "COMPARE_URL=$compare_url" >> $GITHUB_OUTPUT
+
+      # If our dep was changed, check if we've already made a comment and cached its ID
+      - name: Cache check
+        id: cache-check
+        if: steps.get-compare-url.outputs.COMPARE_URL != ''
+        uses: actions/cache@v4
+        with:
+          path: comment-id.txt
+          key: comment-id-pr-${{ github.event.pull_request.number }}
+
+      # If our dep was changed and there is no comment ID in the cache, create a new comment
+      - name: Create comment
+        id: create-comment
+        if: ${{ steps.get-compare-url.outputs.COMPARE_URL != '' && steps.cache-check.outputs.cache-hit != 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            return github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'This PR includes changes to `${{ inputs.dep }}`. Please review them here: ${{ steps.get-compare-url.outputs.COMPARE_URL }}'
+            })
+
+      # Whether we got it from cache or the comment created above, put the comment ID in
+      # the cached output file + set it as the output of this step
+      - name: Get comment ID
+        id: get-comment-id
+        if: steps.get-compare-url.outputs.COMPARE_URL != ''
+        run: |
+          if [ ! -f comment-id.txt ]; then
+            echo "Comment was newly created; getting ID out of response"
+            echo "${{ steps.create-comment }}"
+            echo "${{ steps.create-comment.outputs }}"
+            echo "${{ join(steps.create-comment.outputs.*, '\n') }}"
+            echo "${{ steps.create-comment.outputs.result }}"
+            echo "${{ steps.create-comment.outputs.result }}" | jq '.id' > comment-id.txt
+          fi
+          echo "Comment ID is $(cat comment-id.txt)"
+          echo "COMMENT_ID=$(cat comment-id.txt)" >> $GITHUB_OUTPUT
+
+      - name: Update comment
+        id: update-comment
+        if: ${{ steps.get-compare-url.outputs.COMPARE_URL != '' && steps.cache-check.outputs.cache-hit == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            return github.rest.issues.updateComment({
+              comment_id: ${{ steps.get-comment-id.outputs.COMMENT_ID }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'This PR includes changes to `${{ inputs.dep }}`. Please review them here: ${{ steps.get-compare-url.outputs.COMPARE_URL }}'
+            })
