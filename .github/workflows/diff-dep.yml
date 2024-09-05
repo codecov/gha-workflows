@@ -6,6 +6,9 @@ on:
       dep:
         type: string
         required: true
+      reqs_file:
+        type: string
+        default: 'requirements.in'
 jobs:
   post-comment:
     name: Post comment
@@ -13,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       # Generate a GitHub link to a page that displays all commits/changes between
       # the old dependency version and the new one, or an empty string if the dependency
@@ -21,7 +24,7 @@ jobs:
       - name: Get compare URL
         id: get-compare-url
         run: |
-          compare_url=$(git diff -r ${{ github.event.pull_request.base.sha }} \
+          compare_url=$(git diff -r HEAD^ ${{ inputs.reqs_file }} \
             | grep ${{ inputs.dep }}\/archive \
             | cut -d '/' -f 7 \
             | cut -d '.' -f 1 \
