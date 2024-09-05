@@ -60,15 +60,12 @@ jobs:
         run: |
           if [ ! -f comment-id.txt ]; then
             echo "Comment was newly created; getting ID out of response"
-            echo "${{ steps.create-comment }}"
-            echo "${{ steps.create-comment.outputs }}"
-            echo "${{ join(steps.create-comment.outputs.*, '\n') }}"
-            echo "${{ steps.create-comment.outputs.result }}"
-            echo "${{ steps.create-comment.outputs.result }}" | jq '.id' > comment-id.txt
+            echo "${{ steps.create-comment.outputs.result }}" | jq '.data.id' > comment-id.txt
           fi
           echo "Comment ID is $(cat comment-id.txt)"
           echo "COMMENT_ID=$(cat comment-id.txt)" >> $GITHUB_OUTPUT
 
+      # If we have changes to our dep, and we got a comment ID from the cache, update the comment.
       - name: Update comment
         id: update-comment
         if: ${{ steps.get-compare-url.outputs.COMPARE_URL != '' && steps.cache-check.outputs.cache-hit == 'true' }}
