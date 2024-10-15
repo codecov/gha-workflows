@@ -85,6 +85,7 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
+          ignore_missing: true
   rolling:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
