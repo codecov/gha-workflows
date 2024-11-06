@@ -69,3 +69,8 @@ jobs:
         if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
         run: |
           make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_PUBLIC_QA_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_PUBLIC_QA_URL }}
+      - name: run basic-test-results
+        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
+        uses: codecov/basic-test-results@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
