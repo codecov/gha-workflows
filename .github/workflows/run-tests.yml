@@ -52,6 +52,11 @@ jobs:
         if: ${{ !cancelled() && inputs.run_integration == true }}
         run: |
           make test_env.run_integration
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: junitfiles
+          path: ./*junit*.xml
       ## Don't upload on forks for now.
       - name: upload using codecovcli
         if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
