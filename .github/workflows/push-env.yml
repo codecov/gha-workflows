@@ -21,6 +21,9 @@ on:
         type: boolean
         default: false
         description: "Whether to push the release image"
+      sentry_project:
+        type: string
+        required: false
       working_directory:
         type: string
         default: .
@@ -88,7 +91,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.CODECOV_SENTRY_RELEASE_TOKEN }}
           SENTRY_ORG: ${{ secrets.CODECOV_SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.CODECOV_SENTRY_PROJECT }}
+          SENTRY_PROJECT: ${{ inputs.sentry_project != '' && inputs.sentry_project || secrets.CODECOV_SENTRY_PROJECT }}
         with:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
