@@ -21,6 +21,13 @@ on:
         type: boolean
         default: false
         description: "Whether to push the release image"
+      working_directory:
+        type: string
+        default: .
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_directory }}
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -45,10 +52,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -85,6 +92,8 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
+          ignore_missing: true
+          working_directory: ${{ inputs.working_directory }}
   rolling:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
@@ -98,10 +107,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -128,10 +137,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |

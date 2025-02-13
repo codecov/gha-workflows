@@ -39,6 +39,14 @@ on:
         type: string
         default: "--codecov-yml-path=codecov_cli.yml"
         description: "Path to codecov cli yml. Currently expected to include flag as well --codecov-yml-path=codecov_cli.yml for ex."
+      working_directory:
+        type: string
+        default: .
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_directory }}
+
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -55,10 +63,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -89,6 +97,8 @@ jobs:
           make test_env.label_analysis CODECOV_STATIC_TOKEN=${{ secrets.STATIC_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_ATS_URL }}
           make test_env.ats CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_ATS_URL }}
       - id: test-upload-action
+        # NOTE: `defaults.runs.working-directory` will not be propagated into this action.
+        # This action will only work with the default working directory (the repo root).
         uses: codecov/codecov-ats-docker@main
         if: inputs.use_action
         name: Run tests and upload to Codecov via action

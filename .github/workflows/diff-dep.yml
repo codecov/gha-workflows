@@ -28,7 +28,7 @@ jobs:
             | grep ${{ inputs.dep }}\/archive \
             | cut -d '/' -f 7 \
             | cut -d '.' -f 1 \
-            | awk 'NR%2{printf "https://github.com/codecov/${{ inputs.dep }}/compare/%s..",$0;next;}1')
+            | awk 'NR%2{printf "https://github.com/codecov/${{ inputs.dep }}/compare/%s...",$0;next;}1')
           echo "Compare URL: $compare_url"
           echo "COMPARE_URL=$compare_url" >> $GITHUB_OUTPUT
 
@@ -63,7 +63,7 @@ jobs:
         run: |
           if [ ! -f comment-id.txt ]; then
             echo "Comment was newly created; getting ID out of response"
-            echo "${{ steps.create-comment.outputs.result }}" | jq '.data.id' > comment-id.txt
+            echo '${{ steps.create-comment.outputs.result }}' | jq '.data.id' > comment-id.txt
           fi
           echo "Comment ID is $(cat comment-id.txt)"
           echo "COMMENT_ID=$(cat comment-id.txt)" >> $GITHUB_OUTPUT
