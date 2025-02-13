@@ -10,6 +10,10 @@ on:
       repo:
         type: string
         required: true
+      split:
+        type: number
+        required: false
+        default: 5
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -50,11 +54,11 @@ jobs:
           make test_env.check_db
       - name: Run unit tests
         run: |
-          make test_env.run_unit --group ${{ matrix.group }}
+          make test_env.run_unit GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }}
       - name: Run integration tests
         if: inputs.run_integration == true
         run: |
-          make test_env.run_integration --group ${{ matrix.group }}
+          make test_env.run_integration GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }}
       ## Don't upload on forks for now.
       - name: upload using codecovcli
         if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
