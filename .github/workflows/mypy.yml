@@ -8,6 +8,13 @@ on:
         required: false
         default: ""
         description: "Extra configuration for mypy"
+      working_directory:
+        type: string
+        default: .
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_directory }}
 
 jobs:
   static-type-check:

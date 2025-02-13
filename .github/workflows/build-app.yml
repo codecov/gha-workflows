@@ -9,6 +9,13 @@ on:
       cache_requirements:
         type: boolean
         default: true
+      working_directory:
+        type: string
+        default: .
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_directory }}
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -41,11 +48,11 @@ jobs:
         if: inputs.cache_requirements
         uses: actions/cache@v4
         env:
-          cache-name: cache-requirements
+          cache-name: ${{ inputs.repo }}-requirements
         with:
           path: |
-            requirements.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docker/Dockerfile.requirements') }}
+            ${{ inputs.working_directory }}/requirements.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/requirements.txt', inputs.working_directory)) }}-${{ hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.working_directory)) }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
@@ -53,10 +60,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load requirements from cache

@@ -10,6 +10,14 @@ on:
       repo:
         type: string
         required: true
+      working_directory:
+        type: string
+        default: .
+
+defaults:
+  run:
+    working-directory: ${{ inputs.working_directory }}
+
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -26,10 +34,10 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -56,7 +64,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: junitfiles
-          path: ./*junit*.xml
+          path: ${{ inputs.working_directory }}/*junit*.xml
       ## Don't upload on forks for now.
       - name: upload using codecovcli
         if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
@@ -79,3 +87,4 @@ jobs:
         uses: codecov/basic-test-results@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          directory: ${{ inputs.working_directory }}
