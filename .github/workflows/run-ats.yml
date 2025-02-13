@@ -43,10 +43,6 @@ on:
         type: string
         default: .
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working_directory }}
-
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -54,6 +50,9 @@ jobs:
   ats:
     name: ATS
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -18,10 +18,6 @@ on:
         type: string
         default: .
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working_directory }}
-
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -29,6 +25,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     strategy:
       matrix:
         group: [1, 2, 3, 4, 5]

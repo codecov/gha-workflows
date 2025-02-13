@@ -8,14 +8,13 @@ on:
         type: string
         default: .
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working_directory }}
-
 jobs:
   codecovstartup:
     name: Codecov Startup
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

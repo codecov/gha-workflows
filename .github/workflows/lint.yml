@@ -8,14 +8,13 @@ on:
         type: string
         default: .
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working_directory }}
-
 jobs:
   lint:
     name: Run Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

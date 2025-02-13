@@ -20,10 +20,6 @@ on:
         type: string
         default: .
 
-defaults:
-  run:
-    working-directory: ${{ inputs.working_directory }}
-
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -31,6 +27,9 @@ jobs:
   build-self-hosted:
     name: Build Self Hosted App
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,6 +98,9 @@ jobs:
     needs: [build-self-hosted]
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     environment: self-hosted
     steps:
       - name: Checkout
@@ -132,6 +134,9 @@ jobs:
     needs: [build-self-hosted]
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     environment: self-hosted
     steps:
       - name: Checkout
