@@ -3,11 +3,18 @@ name: Codecov Startup
 
 on:
   workflow_call:
+    inputs:
+      working_directory:
+        type: string
+        default: .
 
 jobs:
   codecovstartup:
     name: Codecov Startup
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

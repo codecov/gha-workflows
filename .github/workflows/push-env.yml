@@ -21,6 +21,9 @@ on:
         type: boolean
         default: false
         description: "Whether to push the release image"
+      working_directory:
+        type: string
+        default: .
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -29,6 +32,9 @@ jobs:
   push-environment:
     name: Push ${{ inputs.environment }} Image
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     environment: ${{ inputs.environment }}
     if: github.repository_owner == 'codecov' && !inputs.push_rolling && !inputs.push_release
     steps:
@@ -48,7 +54,7 @@ jobs:
           cache-name: cache-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -86,10 +92,14 @@ jobs:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
           ignore_missing: true
+          working_directory: ${{ inputs.working_directory }}
   rolling:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,7 +112,7 @@ jobs:
           cache-name: cache-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -120,6 +130,9 @@ jobs:
     name: Push Release Image
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -132,7 +145,7 @@ jobs:
           cache-name: cache-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |

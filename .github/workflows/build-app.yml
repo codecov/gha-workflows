@@ -9,6 +9,9 @@ on:
       cache_requirements:
         type: boolean
         default: true
+      working_directory:
+        type: string
+        default: .
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -17,6 +20,9 @@ jobs:
   build:
     name: Build App
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,8 +50,8 @@ jobs:
           cache-name: cache-requirements
         with:
           path: |
-            requirements.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docker/Dockerfile.requirements') }}
+            ${{ inputs.working_directory }}/requirements.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/requirements.txt', inputs.working_directory)) }}-${{ hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.working_directory)) }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
@@ -56,7 +62,7 @@ jobs:
           cache-name: cache-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load requirements from cache

@@ -8,10 +8,16 @@ on:
         required: false
         default: ""
         description: "Extra configuration for mypy"
+      working_directory:
+        type: string
+        default: .
 
 jobs:
   static-type-check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
