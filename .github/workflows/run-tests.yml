@@ -10,6 +10,9 @@ on:
       repo:
         type: string
         required: true
+      flag_prefix:
+        type: string
+        default: ''
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -52,30 +55,101 @@ jobs:
         if: ${{ !cancelled() && inputs.run_integration == true }}
         run: |
           make test_env.run_integration
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: coveragefiles
+          path: ./*.coverage.xml
+
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: junitfiles
           path: ./*junit*.xml
-      ## Don't upload on forks for now.
-      - name: upload using codecovcli
-        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
-        run: |
-          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_URL }}
-      - name: upload using codecovcli staging
-        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
-        run: |
-          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_ORG_TOKEN_STAGING }} CODECOV_URL=${{ secrets.CODECOV_STAGING_URL }}
-      - name: upload using codecovcli qa
-        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
-        run: |
-          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_QA_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_QA_URL }}
-      - name: upload using codecovcli public qa
-        if: ${{ !cancelled() && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
-        run: |
-          make test_env.upload CODECOV_UPLOAD_TOKEN=${{ secrets.CODECOV_PUBLIC_QA_TOKEN }} CODECOV_URL=${{ secrets.CODECOV_PUBLIC_QA_URL }}
-      - name: run basic-test-results
-        if: ${{ !cancelled() && github.ref && contains(github.ref, 'pull') && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' }}
-        uses: codecov/basic-test-results@v1
+
+  upload:
+    name: Upload to Codecov
+    runs-on: ubuntu-latest
+    needs: [test]
+    strategy:
+      matrix:
+        include:
+          - codecov_url_secret: CODECOV_URL
+            codecov_token_secret: CODECOV_ORG_TOKEN
+            name: prod
+          - codecov_url_secret: CODECOV_STAGING_URL
+            codecov_token_secret: CODECOV_ORG_TOKEN_STAGING
+            name: staging
+          - codecov_url_secret: CODECOV_QA_URL
+            codecov_token_secret: CODECOV_QA_ORG
+            name: qa
+          - codecov_url_secret: CODECOV_PUBLIC_QA_URL
+            codecov_token_secret: CODECOV_PUBLIC_QA_TOKEN
+            name: public qa
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coveragefiles
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: junitfiles
+
+      - name: Uploading unit test coverage (${{ matrix.name }})
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./unit.coverage.xml
+          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          disable_search: true
+          # Strange workaround: API has a `codecov` directory in the repo root
+          # which conflicts with the action's `codecov` binary
+          use_pypi: true
+          token: ${{ secrets[matrix.codecov_token_secret] }}
+          url: ${{ secrets[matrix.codecov_url_secret] }}
+
+      - name: Uploading integration test coverage (${{ matrix.name }})
+        if: ${{ inputs.run_integration == true }}
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./integration.coverage.xml
+          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          disable_search: true
+          # Strange workaround: API has a `codecov` directory in the repo root
+          # which conflicts with the action's `codecov` binary
+          use_pypi: true
+          token: ${{ secrets[matrix.codecov_token_secret] }}
+          url: ${{ secrets[matrix.codecov_url_secret] }}
+
+      - name: Uploading unit test results (${{ matrix.name }})
+        uses: codecov/test-results-action@v1
+        with:
+          files: ./unit.junit.xml
+          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          disable_search: true
+          token: ${{ secrets[matrix.codecov_token_secret] }}
+          url: ${{ secrets[matrix.codecov_url_secret] }}
+          # The coverage action will have installed codecovcli with pip. The
+          # actual binary will be found in $PATH.
+          binary: codecovcli
+
+      - name: Uploading integration test results (${{ matrix.name }})
+        if: ${{ inputs.run_integration == true }}
+        uses: codecov/test-results-action@v1
+        with:
+          files: ./integration.junit.xml
+          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          disable_search: true
+          token: ${{ secrets[matrix.codecov_token_secret] }}
+          url: ${{ secrets[matrix.codecov_url_secret] }}
+          # The coverage action will have installed codecovcli with pip. The
+          # actual binary will be found in $PATH.
+          binary: codecovcli
