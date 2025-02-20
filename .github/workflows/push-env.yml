@@ -51,7 +51,7 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
             ${{ inputs.working_directory }}/app.tar
@@ -109,7 +109,7 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
             ${{ inputs.working_directory }}/app.tar
@@ -142,7 +142,7 @@ jobs:
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
             ${{ inputs.working_directory }}/app.tar
