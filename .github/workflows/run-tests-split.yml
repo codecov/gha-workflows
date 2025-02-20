@@ -17,6 +17,10 @@ on:
       flag_prefix:
         type: string
         default: ''
+      working_directory:
+        type: string
+        default: .
+
 env:
   AR_REPO: ${{ inputs.repo }}
 
@@ -40,6 +44,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     needs: [prepare_groups]
     strategy:
       matrix:
@@ -50,14 +57,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: 'recursive'
       - name: Cache App
         id: cache-app
         uses: actions/cache@v4
         env:
-          cache-name: cache-app
+          cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            app.tar
+            ${{ inputs.working_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -85,17 +93,20 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: coveragefiles-${{ matrix.group }}
-          path: ./*.coverage.xml
+          path: ${{ inputs.working_directory }}/*.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: junitfiles-${{ matrix.group }}
-          path: ./*junit*.xml
+          path: ${{ inputs.working_directory }}/*junit*.xml
 
   upload:
     name: Upload to Codecov
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     needs: [test]
     strategy:
       matrix:
@@ -118,14 +129,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: 'recursive'
 
       - name: Download coverage
+        id: download_coverage
         uses: actions/download-artifact@v4
         with:
           pattern: coveragefiles-*
           merge-multiple: true
 
       - name: Download test results
+        id: download_test_results
         uses: actions/download-artifact@v4
         with:
           pattern: junitfiles-*
@@ -134,7 +148,7 @@ jobs:
       - name: Uploading unit test coverage (${{ matrix.name }})
         uses: codecov/codecov-action@v5
         with:
-          files: ./unit.*.coverage.xml
+          files: ${{ steps.download_coverage.outputs.download-path }}/unit.*.coverage.xml
           flags: ${{ format('{0}unit', inputs.flag_prefix) }}
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
@@ -142,12 +156,13 @@ jobs:
           use_pypi: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
+          working-directory: ${{ inputs.working_directory }}
 
       - name: Uploading integration test coverage (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
         uses: codecov/codecov-action@v5
         with:
-          files: ./integration.*.coverage.xml
+          files: ${{ steps.download_coverage.outputs.download-path }}/integration.*.coverage.xml
           flags: ${{ format('{0}integration', inputs.flag_prefix) }}
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
@@ -155,11 +170,26 @@ jobs:
           use_pypi: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
+          working-directory: ${{ inputs.working_directory }}
+
+      # The test result action doesn't accept globs in its `files` argument
+      # so this step expands the globs into a comma-separated list of files
+      - name: Expand globs for test result files
+        id: junit_files
+        # echo ./unit.*.junit.xml                 => ./unit.1.junit.xml ./unit.2.junit.xml ./unit.3.junit.xml
+        # echo ./unit.*.junit.xml | sed 's/ /,/g' => ./unit.1.junit.xml,./unit.2.junit.xml,./unit.3.junit.xml
+        run: |
+          base_path="${{ steps.download_test_results.outputs.download-path }}"
+          unit_junit_files=$(echo $base_path/unit.*.junit.xml | sed 's/ /,/g')
+          integration_junit_files=$(echo $base_path/integration.*.junit.xml | sed 's/ /,/g')
+
+          echo "unit_junit_files=$unit_junit_files" >> $GITHUB_OUTPUT
+          echo "integration_junit_files=$integration_junit_files" >> $GITHUB_OUTPUT
 
       - name: Uploading unit test results (${{ matrix.name }})
         uses: codecov/test-results-action@v1
         with:
-          files: ./unit.*.junit.xml
+          files: ${{ steps.junit_files.outputs.unit_junit_files }}
           flags: ${{ format('{0}unit', inputs.flag_prefix) }}
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
@@ -167,12 +197,13 @@ jobs:
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
+          working-directory: ${{ inputs.working_directory }}
 
       - name: Uploading integration test results (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
         uses: codecov/test-results-action@v1
         with:
-          files: ./integration.*.junit.xml
+          files: ${{ steps.junit_files.outputs.integration_junit_files }}
           flags: ${{ format('{0}integration', inputs.flag_prefix) }}
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
@@ -180,3 +211,4 @@ jobs:
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
+          working-directory: ${{ inputs.working_directory }}

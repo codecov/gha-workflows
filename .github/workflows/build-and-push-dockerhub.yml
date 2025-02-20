@@ -20,6 +20,9 @@ on:
         type: boolean
         default: true
         description: "Whether to push the image"
+      working_directory:
+        type: string
+        default: .
 
 env:
   DOCKERHUB_REPO: ${{ inputs.repo }}
@@ -30,9 +33,14 @@ jobs:
   build-and-push:
     name: Build and push
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       - name: Cache Image
         id: cache-image
@@ -42,7 +50,7 @@ jobs:
           cache-name: cache-${{ inputs.image_name }}
         with:
           path: |
-            ${{ inputs.image_name }}.tar
+            ${{ inputs.working_directory }}/${{ inputs.image_name }}.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load built image
