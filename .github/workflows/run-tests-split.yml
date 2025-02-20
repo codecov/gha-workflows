@@ -57,6 +57,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: 'recursive'
       - name: Cache App
         id: cache-app
         uses: actions/cache@v4
@@ -128,6 +129,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: 'recursive'
 
       - name: Download coverage
         id: download_coverage
