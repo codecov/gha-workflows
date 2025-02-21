@@ -92,13 +92,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: coveragefiles-${{ matrix.group }}
+          name: ${{ inputs.working_directory }}-coveragefiles-${{ matrix.group }}
           path: ${{ inputs.working_directory }}/*.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: junitfiles-${{ matrix.group }}
+          name: ${{ inputs.working_directory }}-junitfiles-${{ matrix.group }}
           path: ${{ inputs.working_directory }}/*junit*.xml
 
   upload:
@@ -135,14 +135,14 @@ jobs:
         id: download_coverage
         uses: actions/download-artifact@v4
         with:
-          pattern: coveragefiles-*
+          pattern: ${{ inputs.working_directory }}-coveragefiles-*
           merge-multiple: true
 
       - name: Download test results
         id: download_test_results
         uses: actions/download-artifact@v4
         with:
-          pattern: junitfiles-*
+          pattern: ${{ inputs.working_directory }}-junitfiles-*
           merge-multiple: true
 
       - name: Uploading unit test coverage (${{ matrix.name }})
