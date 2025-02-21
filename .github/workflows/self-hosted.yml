@@ -16,6 +16,9 @@ on:
       cache_requirements:
         type: boolean
         default: true
+      cache_file:
+        type: string
+        default: "requirements.txt"
       working_directory:
         type: string
         default: .
@@ -59,7 +62,7 @@ jobs:
         with:
           path: |
             ${{ inputs.working_directory }}/requirements.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/requirements.txt', inputs.working_directory)) }}-${{ hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.working_directory)) }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/{1}', inputs.working_directory, inputs.cache_file)) }}-${{ hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.working_directory)) }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
