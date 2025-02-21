@@ -16,6 +16,11 @@ on:
       working_directory:
         type: string
         default: .
+    outputs:
+      tests_passed:
+        # Silly issue with returning job results as workflow outputs
+        # https://github.com/actions/runner/issues/2495
+        value: ${{ fromJSON(toJSON(jobs.test)).result }}
 
 env:
   AR_REPO: ${{ inputs.repo }}
