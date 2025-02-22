@@ -16,6 +16,11 @@ on:
       working_directory:
         type: string
         default: .
+    outputs:
+      tests_passed:
+        # Silly issue with returning job results as workflow outputs
+        # https://github.com/actions/runner/issues/2495
+        value: ${{ fromJSON(toJSON(jobs.test)).result }}
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -67,13 +72,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: coveragefiles
+          name: ${{ inputs.flag_prefix }}-coveragefiles
           path: ${{ inputs.working_directory }}/*.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: junitfiles
+          name: ${{ inputs.flag_prefix }}-junitfiles
           path: ${{ inputs.working_directory }}/*junit*.xml
 
   upload:
@@ -110,13 +115,13 @@ jobs:
         id: download_coverage
         uses: actions/download-artifact@v4
         with:
-          name: coveragefiles
+          name: ${{ inputs.flag_prefix }}-coveragefiles
 
       - name: Download test results
         id: download_test_results
         uses: actions/download-artifact@v4
         with:
-          name: junitfiles
+          name: ${{ inputs.flag_prefix }}-junitfiles
 
       - name: Uploading unit test coverage (${{ matrix.name }})
         uses: codecov/codecov-action@v5

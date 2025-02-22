@@ -20,6 +20,11 @@ on:
       working_directory:
         type: string
         default: .
+    outputs:
+      tests_passed:
+        # Silly issue with returning job results as workflow outputs
+        # https://github.com/actions/runner/issues/2495
+        value: ${{ fromJSON(toJSON(jobs.test)).result }}
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -92,13 +97,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: coveragefiles-${{ matrix.group }}
+          name: ${{ inputs.flag_prefix }}-coveragefiles-${{ matrix.group }}
           path: ${{ inputs.working_directory }}/*.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: junitfiles-${{ matrix.group }}
+          name: ${{ inputs.flag_prefix }}-junitfiles-${{ matrix.group }}
           path: ${{ inputs.working_directory }}/*junit*.xml
 
   upload:
@@ -135,14 +140,14 @@ jobs:
         id: download_coverage
         uses: actions/download-artifact@v4
         with:
-          pattern: coveragefiles-*
+          pattern: ${{ inputs.flag_prefix }}-coveragefiles-*
           merge-multiple: true
 
       - name: Download test results
         id: download_test_results
         uses: actions/download-artifact@v4
         with:
-          pattern: junitfiles-*
+          pattern: ${{ inputs.flag_prefix }}-junitfiles-*
           merge-multiple: true
 
       - name: Uploading unit test coverage (${{ matrix.name }})
