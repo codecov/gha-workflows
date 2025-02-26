@@ -134,7 +134,7 @@ jobs:
           use_pypi: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
-          working-directory: ${{ inputs.working_directory }}
+          recurse_submodules: true
 
       - name: Uploading integration test coverage (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
@@ -148,7 +148,7 @@ jobs:
           use_pypi: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
-          working-directory: ${{ inputs.working_directory }}
+          recurse_submodules: true
 
       - name: Uploading unit test results (${{ matrix.name }})
         uses: codecov/test-results-action@v1
