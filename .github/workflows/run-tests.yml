@@ -16,6 +16,9 @@ on:
       working_directory:
         type: string
         default: .
+      pytest_rootdir:
+        type: string
+        default: .
     outputs:
       tests_passed:
         # Silly issue with returning job results as workflow outputs
@@ -63,11 +66,11 @@ jobs:
           make test_env.check_db
       - name: Run unit tests
         run: |
-          make test_env.run_unit
+          make test_env.run_unit PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
       - name: Run integration tests
         if: ${{ !cancelled() && inputs.run_integration == true }}
         run: |
-          make test_env.run_integration
+          make test_env.run_integration PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
