@@ -21,9 +21,12 @@ on:
         type: boolean
         default: false
         description: "Whether to push the release image"
-      working_directory:
+      output_directory:
         type: string
         default: .
+      make_target_prefix:
+        type: string
+        default: ""
       sentry_project:
         type: string
         required: false
@@ -35,9 +38,6 @@ jobs:
   push-environment:
     name: Push ${{ inputs.environment }} Image
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     environment: ${{ inputs.environment }}
     if: github.repository_owner == 'codecov' && !inputs.push_rolling && !inputs.push_release
     steps:
@@ -58,7 +58,7 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.working_directory }}/app.tar
+            ${{ inputs.output_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -77,13 +77,13 @@ jobs:
 
       - name: Push ${{ inputs.environment }}
         run: |
-          make tag.${{ inputs.environment }}
-          make push.${{ inputs.environment }}
+          make ${{ inputs.make_target_prefix }}tag.${{ inputs.environment }}
+          make ${{ inputs.make_target_prefix }}push.${{ inputs.environment }}
       - name: Push latest
         if: inputs.environment == 'production'
         run: |
-          make tag.latest
-          make push.latest
+          make ${{ inputs.make_target_prefix }}tag.latest
+          make ${{ inputs.make_target_prefix }}push.latest
 
       - name: Create Sentry release
         if: inputs.create_sentry_release
@@ -96,14 +96,11 @@ jobs:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
           ignore_missing: true
-          working_directory: ${{ inputs.working_directory }}
+          output_directory: ${{ inputs.output_directory }}
   rolling:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -117,7 +114,7 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.working_directory }}/app.tar
+            ${{ inputs.output_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -129,15 +126,12 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push Rolling
         run: |
-          make tag.rolling
-          make push.rolling
+          make ${{ inputs.make_target_prefix }}tag.rolling
+          make ${{ inputs.make_target_prefix }}push.rolling
   release:
     name: Push Release Image
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -151,7 +145,7 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.working_directory }}/app.tar
+            ${{ inputs.output_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
@@ -163,5 +157,5 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push release
         run: |
-          make tag.release
-          make push.release
+          make ${{ inputs.make_target_prefix }}tag.release
+          make ${{ inputs.make_target_prefix }}push.release

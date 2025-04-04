@@ -4,22 +4,19 @@ name: Run Lint
 on:
   workflow_call:
     inputs:
-      working_directory:
+      make_target_prefix:
         type: string
-        default: .
+        default: ""
 
 jobs:
   lint:
     name: Run Lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Install dependencies
-        run: make lint.install
+        run: make ${{ inputs.make_target_prefix }}lint.install
       - name: Check
-        run: make lint.check
+        run: make ${{ inputs.make_target_prefix }}lint.check
