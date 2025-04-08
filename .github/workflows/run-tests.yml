@@ -13,12 +13,15 @@ on:
       flag_prefix:
         type: string
         default: ''
-      working_directory:
-        type: string
-        default: .
       pytest_rootdir:
         type: string
         default: .
+      output_directory:
+        type: string
+        default: .
+      make_target_prefix:
+        type: string
+        default: ""
     outputs:
       tests_passed:
         # Silly issue with returning job results as workflow outputs
@@ -32,9 +35,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,48 +48,45 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.working_directory }}/app.tar
+            ${{ inputs.output_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input app.tar
+          docker load --input ${{ inputs.output_directory }}/app.tar
       - name: Install docker compose
         run: |
           sudo curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
       - name: Bring test env up
         run: |
-          make test_env.up
+          make ${{ inputs.make_target_prefix }}test_env.up
       - name: Prepare for tests
         run: |
-          make test_env.prepare
-          make test_env.check_db
+          make ${{ inputs.make_target_prefix }}test_env.prepare
+          make ${{ inputs.make_target_prefix }}test_env.check_db
       - name: Run unit tests
         run: |
-          make test_env.run_unit PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make ${{ inputs.make_target_prefix }}test_env.run_unit PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
       - name: Run integration tests
         if: ${{ !cancelled() && inputs.run_integration == true }}
         run: |
-          make test_env.run_integration PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make ${{ inputs.make_target_prefix }}test_env.run_integration PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: ${{ inputs.flag_prefix }}-coveragefiles
-          path: ${{ inputs.working_directory }}/*.coverage.xml
+          path: ${{ inputs.output_directory }}/*.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: ${{ inputs.flag_prefix }}-junitfiles
-          path: ${{ inputs.working_directory }}/*junit*.xml
+          path: ${{ inputs.output_directory }}/*junit*.xml
 
   upload:
     name: Upload to Codecov
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     needs: [test]
     strategy:
       matrix:
@@ -164,7 +161,7 @@ jobs:
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.working_directory }}
+          working-directory: ${{ inputs.output_directory }}
 
       - name: Uploading integration test results (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
@@ -178,4 +175,4 @@ jobs:
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.working_directory }}
+          working-directory: ${{ inputs.output_directory }}

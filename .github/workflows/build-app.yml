@@ -9,12 +9,18 @@ on:
       cache_requirements:
         type: boolean
         default: true
-      working_directory:
+      output_directory:
         type: string
         default: .
+      reqs_cache_key:
+        type: string
+        required: false
       cache_file:
         type: string
         default: "requirements.txt"
+      make_target_prefix:
+        type: string
+        default: ""
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -23,9 +29,6 @@ jobs:
   build:
     name: Build App
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ inputs.working_directory }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,8 +57,8 @@ jobs:
           cache-name: ${{ inputs.repo }}-requirements
         with:
           path: |
-            ${{ inputs.working_directory }}/requirements.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles(format('{0}/**/{1}', inputs.working_directory, inputs.cache_file)) }}-${{ hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.working_directory)) }}
+            ${{ inputs.output_directory }}/requirements.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ inputs.reqs_cache_key || format('{0}-{1}', hashFiles(format('{0}/**/{1}', inputs.output_directory, inputs.cache_file)), hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.output_directory))) }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
@@ -66,25 +69,25 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.working_directory }}/app.tar
+            ${{ inputs.output_directory }}/app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load requirements from cache
         if: ${{ steps.cache-requirements.outputs.cache-hit == 'true' && inputs.cache_requirements }}
         run: |
-          make load.requirements
+          make ${{ inputs.make_target_prefix }}load.requirements
 
       - name: Build/pull requirements
         if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' && inputs.cache_requirements }}
         run: |
-          make build.requirements
-          make save.requirements
+          make ${{ inputs.make_target_prefix }}build.requirements
+          make ${{ inputs.make_target_prefix }}save.requirements
 
       - name: Push Requirements
         if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' && !github.event.pull_request.head.repo.fork && github.repository_owner == 'codecov' && inputs.cache_requirements }}
         run: |
-          make push.requirements
+          make ${{ inputs.make_target_prefix }}push.requirements
       - name: Build app
         run: |
-          make build.app
-          make save.app
+          make ${{ inputs.make_target_prefix }}build.app
+          make ${{ inputs.make_target_prefix }}save.app
