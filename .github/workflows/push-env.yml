@@ -62,7 +62,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input app.tar
+          docker load --input ${{ inputs.output_directory }}/app.tar
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v2.1.2"
@@ -118,7 +118,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input app.tar
+          docker load --input ${{ inputs.output_directory }}/app.tar
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -149,7 +149,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input app.tar
+          docker load --input ${{ inputs.output_directory }}/app.tar
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
