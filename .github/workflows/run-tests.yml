@@ -10,18 +10,6 @@ on:
       repo:
         type: string
         required: true
-      flag_prefix:
-        type: string
-        default: ''
-      pytest_rootdir:
-        type: string
-        default: .
-      output_directory:
-        type: string
-        default: .
-      make_target_prefix:
-        type: string
-        default: ""
     outputs:
       tests_passed:
         # Silly issue with returning job results as workflow outputs
@@ -48,41 +36,41 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.output_directory }}/app.tar
+            app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input ${{ inputs.output_directory }}/app.tar
+          docker load --input app.tar
       - name: Install docker compose
         run: |
           sudo curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
       - name: Bring test env up
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.up
+          make test_env.up
       - name: Prepare for tests
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.prepare
-          make ${{ inputs.make_target_prefix }}test_env.check_db
+          make test_env.prepare
+          make test_env.check_db
       - name: Run unit tests
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.run_unit PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make test_env.run_unit
       - name: Run integration tests
         if: ${{ !cancelled() && inputs.run_integration == true }}
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.run_integration PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make test_env.run_integration
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: ${{ inputs.flag_prefix }}-coveragefiles
-          path: ${{ inputs.output_directory }}/*.coverage.xml
+          name: coveragefiles
+          path: *.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: ${{ inputs.flag_prefix }}-junitfiles
-          path: ${{ inputs.output_directory }}/*junit*.xml
+          name: junitfiles
+          path: *junit*.xml
 
   upload:
     name: Upload to Codecov
@@ -115,19 +103,19 @@ jobs:
         id: download_coverage
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.flag_prefix }}-coveragefiles
+          name: coveragefiles
 
       - name: Download test results
         id: download_test_results
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.flag_prefix }}-junitfiles
+          name: junitfiles
 
       - name: Uploading unit test coverage (${{ matrix.name }})
         uses: codecov/codecov-action@v5
         with:
           files: ${{ steps.download_coverage.outputs.download-path }}/unit.coverage.xml
-          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          flags: unit
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
           # which conflicts with the action's `codecov` binary
@@ -141,7 +129,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ${{ steps.download_coverage.outputs.download-path }}/integration.coverage.xml
-          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          flags: integration
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
           # which conflicts with the action's `codecov` binary
@@ -154,25 +142,23 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           files: ${{ steps.download_test_results.outputs.download-path }}/unit.junit.xml
-          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          flags: unit
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.output_directory }}
 
       - name: Uploading integration test results (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
         uses: codecov/test-results-action@v1
         with:
           files: ${{ steps.download_test_results.outputs.download-path }}/integration.junit.xml
-          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          flags: integration
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.output_directory }}

@@ -19,15 +19,6 @@ on:
       cache_file:
         type: string
         default: "requirements.txt"
-      output_directory:
-        type: string
-        default: .
-      reqs_cache_key:
-        type: string
-        required: false
-      make_target_prefix:
-        type: string
-        default: ""
 
 env:
   AR_REPO: ${{ inputs.repo }}
@@ -64,8 +55,8 @@ jobs:
           cache-name: ${{ inputs.repo }}-requirements
         with:
           path: |
-            ${{ inputs.output_directory }}/requirements.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ inputs.reqs_cache_key || format('{0}-{1}', hashFiles(format('{0}/**/{1}', inputs.output_directory, inputs.cache_file)), hashFiles(format('{0}/**/docker/Dockerfile.requirements', inputs.output_directory))) }}
+            requirements.tar
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ format('{0}-{1}', hashFiles(format('./**/{1}', inputs.cache_file)), hashFiles('./**/docker/Dockerfile.requirements')) }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
@@ -76,30 +67,30 @@ jobs:
           cache-name: ${{ inputs.repo }}-self-hosted
         with:
           path: |
-            ${{ inputs.output_directory }}/self-hosted-runtime.tar
-            ${{ inputs.output_directory }}/self-hosted.tar
+            self-hosted-runtime.tar
+            self-hosted.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
 
       - name: Load requirements from cache
         if: ${{ steps.cache-requirements.outputs.cache-hit == 'true' && inputs.cache_requirements }}
         run: |
-          make ${{ inputs.make_target_prefix }}load.requirements
+          make load.requirements
 
       - name: Build/pull requirements
         if: ${{ steps.cache-requirements.outputs.cache-hit != 'true' && inputs.cache_requirements }}
         run: |
-          make ${{ inputs.make_target_prefix }}build.requirements
+          make build.requirements
 
       - name: Load built image
         if: ${{ steps.cache-self-hosted.outputs.cache-hit == 'true' }}
         run: |
-          make ${{ inputs.make_target_prefix }}load.self-hosted
+          make load.self-hosted
 
       - name: Build self hosted
         if: ${{ steps.cache-self-hosted.outputs.cache-hit != 'true' }}
         run: |
-          make ${{ inputs.make_target_prefix }}build.self-hosted
-          make ${{ inputs.make_target_prefix }}save.self-hosted
+          make build.self-hosted
+          make save.self-hosted
 
   self-hosted:
     name: Push Self Hosted Image
@@ -120,12 +111,12 @@ jobs:
           cache-name: ${{ inputs.repo }}-self-hosted
         with:
           path: |
-            ${{ inputs.output_directory }}/self-hosted-runtime.tar
-            ${{ inputs.output_directory }}/self-hosted.tar
+            self-hosted-runtime.tar
+            self-hosted.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          make ${{ inputs.make_target_prefix }}load.self-hosted
+          make load.self-hosted
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -133,8 +124,8 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push Self Hosted Rolling
         run: |
-          make ${{ inputs.make_target_prefix }}tag.self-hosted-rolling
-          make ${{ inputs.make_target_prefix }}push.self-hosted-rolling
+          make tag.self-hosted-rolling
+          make push.self-hosted-rolling
   self-hosted-release:
     name: Push Self Hosted Release Image
     needs: [build-self-hosted]
@@ -154,12 +145,12 @@ jobs:
           cache-name: ${{ inputs.repo }}-self-hosted
         with:
           path: |
-            ${{ inputs.output_directory }}/self-hosted-runtime.tar
-            ${{ inputs.output_directory }}/self-hosted.tar
+            self-hosted-runtime.tar
+            self-hosted.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          make ${{ inputs.make_target_prefix }}load.self-hosted
+          make load.self-hosted
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -167,5 +158,5 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push self hosted release
         run: |
-          make ${{ inputs.make_target_prefix }}tag.self-hosted-release
-          make ${{ inputs.make_target_prefix }}push.self-hosted-release
+          make tag.self-hosted-release
+          make push.self-hosted-release

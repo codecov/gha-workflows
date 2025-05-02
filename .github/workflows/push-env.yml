@@ -21,12 +21,6 @@ on:
         type: boolean
         default: false
         description: "Whether to push the release image"
-      output_directory:
-        type: string
-        default: .
-      make_target_prefix:
-        type: string
-        default: ""
       sentry_project:
         type: string
         required: false
@@ -58,11 +52,11 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.output_directory }}/app.tar
+            app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input ${{ inputs.output_directory }}/app.tar
+          docker load --input app.tar
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v2.1.2"
@@ -77,13 +71,13 @@ jobs:
 
       - name: Push ${{ inputs.environment }}
         run: |
-          make ${{ inputs.make_target_prefix }}tag.${{ inputs.environment }}
-          make ${{ inputs.make_target_prefix }}push.${{ inputs.environment }}
+          make tag.${{ inputs.environment }}
+          make push.${{ inputs.environment }}
       - name: Push latest
         if: inputs.environment == 'production'
         run: |
-          make ${{ inputs.make_target_prefix }}tag.latest
-          make ${{ inputs.make_target_prefix }}push.latest
+          make tag.latest
+          make push.latest
 
       - name: Create Sentry release
         if: inputs.create_sentry_release
@@ -96,7 +90,6 @@ jobs:
           environment: ${{ inputs.environment }}
           version: ${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
           ignore_missing: true
-          output_directory: ${{ inputs.output_directory }}
   rolling:
     name: Push Rolling Image
     if: inputs.push_rolling == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
@@ -114,11 +107,11 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.output_directory }}/app.tar
+            app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input ${{ inputs.output_directory }}/app.tar
+          docker load --input app.tar
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -126,8 +119,8 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push Rolling
         run: |
-          make ${{ inputs.make_target_prefix }}tag.rolling
-          make ${{ inputs.make_target_prefix }}push.rolling
+          make tag.rolling
+          make push.rolling
   release:
     name: Push Release Image
     if: inputs.push_release == true && github.repository_owner == 'codecov' && !github.event.pull_request.head.repo.fork
@@ -145,11 +138,11 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.output_directory }}/app.tar
+            app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input ${{ inputs.output_directory }}/app.tar
+          docker load --input app.tar
       - name: Log in to Docker Hub
         uses: docker/login-action@v3.1.0
         with:
@@ -157,5 +150,5 @@ jobs:
           password: ${{ secrets.CODECOV_DEVOPS_DOCKER_PASSWORD }}
       - name: Push release
         run: |
-          make ${{ inputs.make_target_prefix }}tag.release
-          make ${{ inputs.make_target_prefix }}push.release
+          make tag.release
+          make push.release

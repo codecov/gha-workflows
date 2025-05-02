@@ -14,18 +14,6 @@ on:
         type: number
         required: false
         default: 5
-      flag_prefix:
-        type: string
-        default: ''
-      output_directory:
-        type: string
-        default: .
-      make_target_prefix:
-        type: string
-        default: ""
-      pytest_rootdir:
-        type: string
-        default: .
     outputs:
       tests_passed:
         # Silly issue with returning job results as workflow outputs
@@ -73,41 +61,41 @@ jobs:
           cache-name: ${{ inputs.repo }}-app
         with:
           path: |
-            ${{ inputs.output_directory }}/app.tar
+            app.tar
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
       - name: Load built image
         run: |
-          docker load --input ${{ inputs.output_directory }}/app.tar
+          docker load --input app.tar
       - name: Install docker compose
         run: |
           sudo curl -SL https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
       - name: Bring test env up
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.up
+          make test_env.up
       - name: Prepare for tests
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.prepare
-          make ${{ inputs.make_target_prefix }}test_env.check_db
+          make test_env.prepare
+          make test_env.check_db
       - name: Run unit tests
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.run_unit GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }} PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make test_env.run_unit GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }}
       - name: Run integration tests
         if: inputs.run_integration == true
         run: |
-          make ${{ inputs.make_target_prefix }}test_env.run_integration GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }} PYTEST_ROOTDIR=${{ inputs.pytest_rootdir }}
+          make test_env.run_integration GROUP=${{ matrix.group }} SPLIT=${{ inputs.split }}
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: ${{ inputs.flag_prefix }}-coveragefiles-${{ matrix.group }}
-          path: ${{ inputs.output_directory }}/*.coverage.xml
+          name: coveragefiles-${{ matrix.group }}
+          path: *.coverage.xml
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: ${{ inputs.flag_prefix }}-junitfiles-${{ matrix.group }}
-          path: ${{ inputs.output_directory }}/*junit*.xml
+          name: junitfiles-${{ matrix.group }}
+          path: *junit*.xml
 
   upload:
     name: Upload to Codecov
@@ -140,21 +128,21 @@ jobs:
         id: download_coverage
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ inputs.flag_prefix }}-coveragefiles-*
+          pattern: coveragefiles-*
           merge-multiple: true
 
       - name: Download test results
         id: download_test_results
         uses: actions/download-artifact@v4
         with:
-          pattern: ${{ inputs.flag_prefix }}-junitfiles-*
+          pattern: junitfiles-*
           merge-multiple: true
 
       - name: Uploading unit test coverage (${{ matrix.name }})
         uses: codecov/codecov-action@v5
         with:
           files: ${{ steps.download_coverage.outputs.download-path }}/unit.*.coverage.xml
-          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          flags: unit
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
           # which conflicts with the action's `codecov` binary
@@ -168,7 +156,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: ${{ steps.download_coverage.outputs.download-path }}/integration.*.coverage.xml
-          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          flags: integration
           disable_search: true
           # Strange workaround: API has a `codecov` directory in the repo root
           # which conflicts with the action's `codecov` binary
@@ -195,25 +183,23 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           files: ${{ steps.junit_files.outputs.unit_junit_files }}
-          flags: ${{ format('{0}unit', inputs.flag_prefix) }}
+          flags: unit
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.output_directory }}
 
       - name: Uploading integration test results (${{ matrix.name }})
         if: ${{ inputs.run_integration == true }}
         uses: codecov/test-results-action@v1
         with:
           files: ${{ steps.junit_files.outputs.integration_junit_files }}
-          flags: ${{ format('{0}integration', inputs.flag_prefix) }}
+          flags: integration
           disable_search: true
           token: ${{ secrets[matrix.codecov_token_secret] }}
           url: ${{ secrets[matrix.codecov_url_secret] }}
           # The coverage action will have installed codecovcli with pip. The
           # actual binary will be found in $PATH.
           binary: codecovcli
-          working-directory: ${{ inputs.output_directory }}
