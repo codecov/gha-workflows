@@ -79,6 +79,17 @@ jobs:
           make tag.latest
           make push.latest
 
+      - uses: clowdhaus/argo-cd-action/@main
+        # CLI has already been downloaded in prior step, no call to GitHub API
+        with:
+          command: app set staging-worker
+          options: --parameter codecovWorker.imagetag=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }} --parameter app_version=${{ inputs.environment }}-release-${{ steps.sha.outputs.short_sha }}
+
+      - uses: clowdhaus/argo-cd-action/@main
+        # CLI has already been downloaded in prior step, no call to GitHub API
+        with:
+          command: app sync staging-worker
+
       - name: Create Sentry release
         if: inputs.create_sentry_release
         uses: getsentry/action-release@v1
