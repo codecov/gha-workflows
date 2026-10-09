@@ -60,17 +60,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-
 
-      - name: Cache Self hosted
-        id: cache-self-hosted
-        uses: actions/cache@v4
-        env:
-          cache-name: ${{ github.repository }}-self-hosted
-        with:
-          path: |
-            self-hosted-runtime.tar
-            self-hosted.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
-
       - name: Load requirements from cache
         if: ${{ steps.cache-requirements.outputs.cache-hit == 'true' && inputs.cache_requirements }}
         run: |
@@ -81,16 +70,37 @@ jobs:
         run: |
           make build.requirements
 
+      # A second invocation in the same run reuses the image the first one uploaded.
+      - name: Download image built earlier in this run
+        id: download-self-hosted
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: self-hosted-image
+
       - name: Load built image
-        if: ${{ steps.cache-self-hosted.outputs.cache-hit == 'true' }}
+        if: ${{ steps.download-self-hosted.outcome == 'success' }}
         run: |
           make load.self-hosted
 
       - name: Build self hosted
-        if: ${{ steps.cache-self-hosted.outputs.cache-hit != 'true' }}
+        if: ${{ steps.download-self-hosted.outcome != 'success' }}
         run: |
           make build.self-hosted
           make save.self-hosted
+
+      # Artifact, not cache: a merged release PR's run gets a read-only cache token.
+      - name: Upload self hosted image
+        if: ${{ steps.download-self-hosted.outcome != 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-image
+          path: |
+            self-hosted-runtime.tar
+            self-hosted.tar
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
 
   self-hosted:
     name: Push Self Hosted Image
@@ -104,16 +114,10 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'recursive'
-      - name: Cache Self hosted
-        id: cache-self-hosted
-        uses: actions/cache@v4
-        env:
-          cache-name: ${{ github.repository }}-self-hosted
+      - name: Download self hosted image
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            self-hosted-runtime.tar
-            self-hosted.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
+          name: self-hosted-image
       - name: Load built image
         run: |
           make load.self-hosted
@@ -138,16 +142,10 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'recursive'
-      - name: Cache Self hosted
-        id: cache-self-hosted
-        uses: actions/cache@v4
-        env:
-          cache-name: ${{ github.repository }}-self-hosted
+      - name: Download self hosted image
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            self-hosted-runtime.tar
-            self-hosted.tar
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ github.run_id }}
+          name: self-hosted-image
       - name: Load built image
         run: |
           make load.self-hosted
